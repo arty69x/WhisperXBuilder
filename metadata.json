@@ -1,0 +1,6 @@
+{
+  "name": "WhisperX Builder MAX v2.0",
+  "description": "Full-stack AI IDE with Vision Pipeline, Thinking Mode, and Lockspec Engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI IDE", "Vision Pipeline", "Lockspec Engine"]
+}
