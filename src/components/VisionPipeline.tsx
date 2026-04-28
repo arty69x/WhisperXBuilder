@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -14,7 +14,26 @@ import { geminiStream, writeToSystem } from "../lib/gemini";
 import { useAppStore } from "../store";
 import type { VisionSession, VisionStage, VisionStageId } from "../types";
 
-type OutputTab = "blueprint" | "code" | "preview";
+type OutputTab = "blueprint" | "code" | "html" | "preview";
+
+const CODE_BLOCK_REGEX = /```(?:tsx|typescript|ts|js|jsx|html)?\n([\s\S]*?)```/i;
+
+const normalizeGeneratedBlock = (input?: string) => {
+  if (!input) return "";
+  const cleaned = input.trim();
+  const match = cleaned.match(CODE_BLOCK_REGEX);
+  return (match ? match[1] : cleaned).trim();
+};
+
+const toLivePreviewCode = (input?: string) => {
+  const base = normalizeGeneratedBlock(input);
+  if (!base) return "";
+  return base
+    .replace(/^import\s+.*$/gm, "")
+    .replace(/export\s+default\s+/g, "")
+    .replace(/export\s+(const|function|class)\s+/g, "$1 ")
+    .trim();
+};
 
 export function VisionPipeline() {
   const { visionSessions, addVisionSession, updateVisionSession, setActiveVisionId, activeVisionId } = useAppStore();
@@ -51,6 +70,7 @@ export function VisionPipeline() {
         imageBase64: base64,
         stages: STAGES.map(s => ({ ...s, status: "idle" })),
         generatedCode: "",
+        generatedHtml: "",
         blueprint: "",
         createdAt: now(),
         updatedAt: now()
@@ -71,6 +91,7 @@ export function VisionPipeline() {
     
     updateVisionSession(active.id, { 
       generatedCode: "", 
+      generatedHtml: "",
       blueprint: "",
       stages: active.stages.map(s => ({ ...s, status: "idle" as const })),
       updatedAt: now()
@@ -82,6 +103,7 @@ export function VisionPipeline() {
 2. LAYOUT_STRUCTURE_MAPPING: Define the grid/flex layout hierarchy.
 3. COLOR_PALETTE_EXTRACTION: List all primary, secondary, and accent colors in Hex/HSL.
 4. REACT_CODEGEN: Write a complete, production-ready React component using Tailwind CSS.
+5. FULL_HTML_EXPORT: Write a full standalone HTML document (<!doctype html> ... </html>) that recreates the same UI.
 
 Output your response using these exact delimiters:
 [BLUEPRINT_START]
@@ -89,7 +111,10 @@ Output your response using these exact delimiters:
 [BLUEPRINT_END]
 [CODE_START]
 (Include the full React code here)
-[CODE_END]`;
+[CODE_END]
+[HTML_START]
+(Include the complete full HTML document here)
+[HTML_END]`;
 
       let fullBuffer = "";
       let currentStage: VisionStageId = "identification";
@@ -125,19 +150,23 @@ Output your response using these exact delimiters:
           // Parse buffer for live preview
           const blueprintMatch = fullBuffer.match(/\[BLUEPRINT_START\]([\s\S]*?)(\[BLUEPRINT_END\]|$)/);
           const codeMatch = fullBuffer.match(/\[CODE_START\]([\s\S]*?)(\[CODE_END\]|$)/);
+          const htmlMatch = fullBuffer.match(/\[HTML_START\]([\s\S]*?)(\[HTML_END\]|$)/);
           
           updateVisionSession(active.id, { 
             blueprint: blueprintMatch ? blueprintMatch[1].trim() : "Extracting blueprint...",
-            generatedCode: codeMatch ? codeMatch[1].trim() : (codeMatch ? "" : "Synthesizing code...")
+            generatedCode: codeMatch ? codeMatch[1].trim() : (codeMatch ? "" : "Synthesizing code..."),
+            generatedHtml: htmlMatch ? htmlMatch[1].trim() : ""
           });
         },
         onDone: (final) => {
           const blueprintMatch = final.match(/\[BLUEPRINT_START\]([\s\S]*?)\[BLUEPRINT_END\]/);
           const codeMatch = final.match(/\[CODE_START\]([\s\S]*?)\[CODE_END\]/);
+          const htmlMatch = final.match(/\[HTML_START\]([\s\S]*?)\[HTML_END\]/);
           
           updateVisionSession(active.id, { 
             blueprint: blueprintMatch ? blueprintMatch[1].trim() : "",
             generatedCode: codeMatch ? codeMatch[1].trim() : "",
+            generatedHtml: htmlMatch ? htmlMatch[1].trim() : "",
             stages: active.stages.map(s => ({ ...s, status: "done" as const })),
             updatedAt: now()
           });
@@ -160,8 +189,7 @@ Output your response using these exact delimiters:
 
   const applyToSystem = async () => {
     if (!active?.generatedCode) return;
-    const match = active.generatedCode.match(/```(?:tsx|typescript|ts|js|jsx)?\n([\s\S]*?)```/i);
-    const code = match ? match[1] : active.generatedCode;
+    const code = normalizeGeneratedBlock(active.generatedCode);
     
     const pathInput = window.prompt("SYNC_POINT (e.g., src/components/VisionResult.tsx):", `src/components/${active.id.slice(0,8)}_module.tsx`);
     if (!pathInput) return;
@@ -324,6 +352,13 @@ Output your response using these exact delimiters:
                       )}>
                       <Layers size={14}/> DESIGN_PREVIEW
                     </button>
+                    <button onClick={() => setActiveTab("html")}
+                      className={cn(
+                        "px-4 md:px-8 py-3 md:py-4 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all gap-2 flex items-center",
+                        activeTab === 'html' ? "bg-[#070c12] text-blue-400 border-l-4 border-black" : "bg-black text-gray-400"
+                      )}>
+                      <Monitor size={14}/> FULL_HTML
+                    </button>
                     <div className="flex-1" />
                     {isRunning && <RefreshCw size={12} className="animate-spin opacity-50 mr-4" />}
                  </div>
@@ -367,12 +402,12 @@ Output your response using these exact delimiters:
                            <span className="opacity-50 italic">{isRunning ? "// Initiating neural synthesis..." : "// Awaiting instruction stream..."}</span>
                          )}
                        </div>
-                     ) : (
+                    ) : activeTab === "preview" ? (
                        <div className="h-full relative p-4 bg-white overflow-auto">
                          {active.generatedCode ? (
                              <LiveProvider 
                                key={active.generatedCode}
-                               code={active.generatedCode.replace(/^```[a-z]*\n/i, '').replace(/```$/g, '').trim()} 
+                               code={toLivePreviewCode(active.generatedCode)} 
                                scope={{ React, ...LucideIcons, cn }}
                                noInline={false}
                              >
@@ -429,6 +464,33 @@ Output your response using these exact delimiters:
                            </div>
                          )}
                        </div>
+                    ) : (
+                      <div className="h-full relative">
+                        {active.generatedHtml ? (
+                          <>
+                            <div className="flex flex-col sm:flex-row gap-2 mb-4 bg-[#070c12] p-2 border-b-4 border-black">
+                              <button
+                                onClick={() => handleCopy(active.generatedHtml || "")}
+                                className="p-3 bg-white text-black border-4 border-black shadow-[4px_4px_0_black] hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 font-black uppercase text-[10px] w-full sm:w-auto"
+                              >
+                                {copied ? <CheckCircle2 size={14} className="text-green-600" /> : <Copy size={14} />}
+                                {copied ? "COPIED" : "COPY_HTML"}
+                              </button>
+                              <button
+                                onClick={() => downloadText(`generated_full_document.html`, active.generatedHtml || "")}
+                                className="p-3 bg-white text-black border-4 border-black shadow-[4px_4px_0_black] hover:bg-blue-300 transition-all flex items-center justify-center gap-2 font-black uppercase text-[10px] w-full sm:w-auto"
+                              >
+                                <Download size={14} /> DOWNLOAD_HTML
+                              </button>
+                            </div>
+                            <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                              {active.generatedHtml.startsWith("```") ? active.generatedHtml : "```html\n" + active.generatedHtml + "\n```"}
+                            </Markdown>
+                          </>
+                        ) : (
+                          <span className="opacity-50 italic">{isRunning ? "// Building full HTML document..." : "// Awaiting full-html generation..."}</span>
+                        )}
+                      </div>
                     )}
                  </div>
 
@@ -445,6 +507,14 @@ Output your response using these exact delimiters:
                             <Monitor size={14}/> SYSTEM_DEPLOY
                          </button>
                        </>
+                    )}
+                    {activeTab === "html" && active.generatedHtml && (
+                      <button
+                        onClick={() => downloadText(`generated_full_document.html`, active.generatedHtml!)}
+                        className="flex-1 md:flex-none px-4 md:px-6 py-2 md:py-3 bg-white text-black font-black text-[10px] md:text-xs uppercase hover:bg-blue-300 border-4 border-black shadow-[4px_4px_0_gray] flex items-center justify-center gap-2"
+                      >
+                        <Download size={14} /> Export_HTML
+                      </button>
                     )}
                  </div>
               </div>

@@ -110,6 +110,7 @@ export interface VisionSession {
   lockspec?: string;
   blueprint?: string;
   generatedCode?: string;
+  generatedHtml?: string;
   createdAt: number;
   updatedAt: number;
 }
