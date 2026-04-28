@@ -24,36 +24,36 @@ export function SkillForge() {
   };
 
   return (
-    <div className="h-full flex flex-col p-8 bg-white grid-bg overflow-hidden italic">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-500 border-4 border-black flex items-center justify-center text-white shadow-[4px_4px_0_black]">
-            <FlaskConical size={24} />
+    <div className="h-full flex flex-col p-4 md:p-8 bg-white grid-bg overflow-hidden italic">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-strobe-green border-4 border-black flex items-center justify-center text-white shadow-[4px_4px_0_black]">
+            <FlaskConical size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tight">Skill Forge</h2>
-            <p className="text-[10px] font-mono text-gray-400 uppercase font-bold tracking-widest">Architectural Prompt Engineering</p>
+            <h2 className="text-xl md:text-3xl font-black uppercase tracking-tight italic leading-none">Skill Forge</h2>
+            <p className="text-[8px] md:text-[10px] font-mono text-gray-400 uppercase font-bold tracking-widest mt-1">Prompt Engineering Lab</p>
           </div>
         </div>
-        <button onClick={handleNewSkill} className="btn btn-success flex items-center gap-2">
-          <Plus size={16}/> New Skill
+        <button onClick={handleNewSkill} className="btn btn-success flex items-center gap-2 py-2 md:py-3 w-full md:w-auto justify-center">
+          <Plus size={16}/> NEW_CAPABILITY
         </button>
       </div>
 
-      <div className="flex-1 flex gap-8 overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto md:overflow-hidden scrollbar-hide pb-20 md:pb-0">
         {/* Sidebar List */}
-        <div className="w-1/4 space-y-4 overflow-y-auto pr-4 scrollbar-hide">
+        <div className="w-full md:w-1/4 flex flex-row md:flex-col gap-3 md:space-y-4 overflow-x-auto md:overflow-y-auto scrollbar-hide pb-2 md:pb-0 shrink-0">
           {skills.length === 0 ? (
-            <div className="p-8 border-4 border-dashed border-gray-200 text-center text-gray-300 font-black uppercase text-xs">
-              No Skills Defined
+            <div className="p-6 md:p-8 border-4 border-dashed border-gray-200 text-center text-gray-300 font-black uppercase text-[10px] flex-1">
+              VOID_SET
             </div>
           ) : (
             skills.map(s => (
               <button key={s.id} onClick={() => setActiveSkillId(s.id)}
-                className={cn("w-full p-4 border-4 text-left transition-all",
+                className={cn("p-4 border-4 text-left transition-all shrink-0 md:shrink min-w-[140px] md:min-w-0",
                   activeSkillId === s.id ? "bg-black text-white border-black shadow-[4px_4px_0_gray]" : "bg-white border-black hover:bg-yellow-50 text-black shadow-[4px_4px_0_black]")}>
-                <div className="font-black uppercase truncate">{s.name}</div>
-                <div className="text-[9px] font-mono opacity-60 uppercase">{new Date(s.createdAt).toLocaleDateString()}</div>
+                <div className="font-black uppercase truncate text-xs md:text-sm">{s.name}</div>
+                <div className="text-[8px] md:text-[9px] font-mono opacity-60 uppercase">{new Date(s.createdAt).toLocaleDateString()}</div>
               </button>
             ))
           )}

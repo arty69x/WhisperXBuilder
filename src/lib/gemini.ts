@@ -1,7 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
+import axios from "axios";
 import type { GeminiModelId } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+
+// System Sync Utility
+export const writeToSystem = async (filePath: string, content: string) => {
+  const token = localStorage.getItem("whisperx_token");
+  if (!token) throw new Error("Unauthorized");
+  await axios.post("/api/system/write", { filePath, content }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
 
 export const GEMINI_MODELS = [
   { id: "gemini-3-flash-preview", label: "Gemini 3 Flash ✦", supportsThinking: true  },

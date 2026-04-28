@@ -18,36 +18,36 @@ export function ThemeLab() {
   ];
 
   return (
-    <div className="h-full flex flex-col p-8 bg-white grid-bg overflow-hidden italic">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-yellow-400 border-4 border-black flex items-center justify-center text-black shadow-[4px_4px_0_black]">
-            <Palette size={24} />
+    <div className="h-full flex flex-col p-4 md:p-8 bg-white grid-bg overflow-hidden italic">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-strobe-yellow border-4 border-black flex items-center justify-center text-black shadow-[4px_4px_0_black]">
+            <Palette size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tight">Theme Lab</h2>
-            <p className="text-[10px] font-mono text-gray-400 uppercase font-bold tracking-widest">Aesthetic Synthesis Engine</p>
+            <h2 className="text-xl md:text-3xl font-black uppercase tracking-tight leading-none">Theme Lab</h2>
+            <p className="text-[8px] md:text-[10px] font-mono text-gray-400 uppercase font-bold tracking-widest mt-1">Aesthetic Synthesis Engine</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 border-4 border-black bg-white font-black text-xs uppercase shadow-[4px_4px_0_black]">
-           <Sparkles size={14} className="text-yellow-500" /> Auto-Balance Active
+        <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 border-4 border-black bg-white font-black text-[9px] md:text-xs uppercase shadow-[4px_4px_0_black] w-full md:w-auto justify-center">
+           <Sparkles size={14} className="text-yellow-500" /> Balanced
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 flex-1 overflow-y-auto pr-4 scrollbar-hide">
-        <div className="space-y-8">
-          <section className="space-y-6">
-             <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 border-b-4 border-black pb-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 flex-1 overflow-y-auto pr-2 md:pr-4 scrollbar-hide pb-20 md:pb-0">
+        <div className="space-y-6 md:space-y-8">
+          <section className="space-y-4 md:space-y-6">
+             <h3 className="text-xs md:text-sm font-black uppercase tracking-widest flex items-center gap-2 border-b-4 border-black pb-2">
                 <Box size={16} /> Color Foundation
              </h3>
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {PRIMARY_PALETTE.map((p) => (
                    <button key={p.name} 
-                      className="group flex items-center gap-4 p-4 border-4 border-black bg-white shadow-brutal transition-all hover:-translate-y-1 hover:bg-black hover:text-white">
-                      <div className="w-10 h-10 border-2 border-black" style={{ backgroundColor: p.color }} />
-                      <div className="text-left">
-                         <p className="text-[10px] font-black uppercase">{p.name}</p>
-                         <p className="text-[8px] font-mono opacity-50">{p.color}</p>
+                      className="group flex items-center gap-3 md:gap-4 p-3 md:p-4 border-4 border-black bg-white shadow-brutal transition-all hover:-translate-y-1 hover:bg-black hover:text-white">
+                      <div className="w-8 h-8 md:w-10 md:h-10 border-2 border-black shrink-0" style={{ backgroundColor: p.color }} />
+                      <div className="text-left overflow-hidden">
+                         <p className="text-[9px] md:text-[10px] font-black uppercase truncate">{p.name}</p>
+                         <p className="text-[7px] md:text-[8px] font-mono opacity-50">{p.color}</p>
                       </div>
                    </button>
                 ))}

@@ -98,19 +98,24 @@ export default function App() {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden border-l-4 border-black">
         {/* Header */}
-        <header className="h-20 border-b-4 border-black bg-white flex items-center justify-between px-8 flex-shrink-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-20 border-b-4 border-black bg-white flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-20">
+          <div className="flex items-center gap-2 md:gap-4">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 border-4 border-black shadow-brutal-sm active:shadow-none">
+               <div className="w-5 h-0.5 bg-black mb-1" />
+               <div className="w-5 h-0.5 bg-black mb-1" />
+               <div className="w-5 h-0.5 bg-black" />
+            </button>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">
+              <h1 className="text-lg md:text-2xl font-black tracking-tighter uppercase leading-none">
                 WhisperX <span className="text-strobe-blue text-holo">Builder</span>
               </h1>
-              <p className="text-[10px] font-mono font-black text-gray-400 uppercase tracking-widest mt-1">
+              <p className="text-[8px] md:text-[10px] font-mono font-black text-gray-400 uppercase tracking-widest mt-1">
                  MAX_V2.0 // EVOLUTIONary IDE // 2027
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
             <div className="hidden md:flex flex-col items-end">
                <span className="text-[9px] font-mono font-black uppercase text-gray-400">Environment</span>
                <div className="flex items-center gap-2">
@@ -119,13 +124,13 @@ export default function App() {
                </div>
             </div>
 
-            <div className="flex items-center gap-4 border-l-4 border-black pl-8">
-              <div className="w-10 h-10 border-4 border-black flex items-center justify-center bg-yellow-400 group relative">
-                 <UserIcon size={20} />
-                 <div className="absolute top-12 right-0 hidden group-hover:block z-50">
-                    <div className="panel p-4 bg-white min-w-[200px] border-4 border-black shadow-[8px_8px_0_black]">
-                       <p className="font-black uppercase text-[10px] mb-1">{auth.user.username}</p>
-                       <p className="text-[9px] font-mono text-gray-400 mb-4">{auth.user.email}</p>
+            <div className="flex items-center gap-4 border-l-4 border-black pl-4 md:pl-8">
+              <div className="w-8 h-8 md:w-10 md:h-10 border-4 border-black flex items-center justify-center bg-strobe-yellow group relative">
+                 <UserIcon size={16} className="md:w-5 md:h-5" />
+                 <div className="absolute top-10 right-0 hidden group-hover:block z-50">
+                    <div className="panel p-4 bg-white min-w-[180px] md:min-w-[200px] border-4 border-black shadow-[8px_8px_0_black]">
+                       <p className="font-black uppercase text-[10px] mb-1">{user?.username}</p>
+                       <p className="text-[9px] font-mono text-gray-400 mb-4">{user?.email}</p>
                        <button onClick={logout} className="btn btn-danger w-full py-2 text-[10px] uppercase">
                           <LogOut size={12}/> Terminate Session
                        </button>

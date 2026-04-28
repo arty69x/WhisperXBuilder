@@ -147,6 +147,44 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // ─── System Shell (High Privilege) ────────────────────────
+  app.post("/api/system/write", verifyToken, (req: any, res: any) => {
+    // SECURITY: This is a lab environment, but normally we'd restrict paths
+    const { filePath, content } = req.body;
+    if (!filePath || typeof content !== "string") {
+      return res.status(400).json({ error: "Missing path or content" });
+    }
+    
+    // Prevent writing outside workspace for basic safety
+    const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
+    const fullPath = path.join(process.cwd(), safePath);
+
+    try {
+      const dir = path.dirname(fullPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(fullPath, content, "utf8");
+      res.json({ status: "ok", path: safePath });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/system/read", verifyToken, (req: any, res: any) => {
+    const { filePath } = req.query;
+    if (!filePath) return res.status(400).json({ error: "Missing path" });
+    
+    const safePath = path.normalize(filePath as string).replace(/^(\.\.[\/\\])+/, '');
+    const fullPath = path.join(process.cwd(), safePath);
+
+    try {
+      if (!fs.existsSync(fullPath)) return res.status(404).json({ error: "Not found" });
+      const content = fs.readFileSync(fullPath, "utf8");
+      res.json({ content });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
