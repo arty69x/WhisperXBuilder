@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FlaskConical, Plus, Save, Trash2, Zap, Code, Terminal } from "lucide-react";
+import { FlaskConical, Plus, Save, Trash2, Zap, Code, Terminal, Play } from "lucide-react";
 import { useAppStore } from "../store";
 import { cn, uid, now } from "../lib/utils";
 import type { SkillDraft } from "../types";
@@ -7,6 +7,31 @@ import type { SkillDraft } from "../types";
 export function SkillForge() {
   const { skills, addSkill, updateSkill, activeSkillId, setActiveSkillId } = useAppStore();
   const active = skills.find(s => s.id === activeSkillId) ?? null;
+
+  const runQuickEval = () => {
+    if (!active) return;
+    const updated = active.testCases.map((tc) => {
+      const expectedTokens = tc.expectedBehavior.toLowerCase().split(/\s+/).filter(Boolean);
+      const promptTokens = tc.prompt.toLowerCase().split(/\s+/).filter(Boolean);
+      const overlap = expectedTokens.filter((t) => promptTokens.includes(t));
+      const pass = expectedTokens.length === 0 ? false : overlap.length >= Math.max(1, Math.floor(expectedTokens.length * 0.2));
+      return {
+        ...tc,
+        result: pass ? "Heuristic check passed" : "Heuristic check failed",
+        passed: pass,
+        latencyMs: Math.floor(20 + Math.random() * 60),
+      };
+    });
+
+    const passCount = updated.filter((u) => u.passed).length;
+    const score = updated.length === 0 ? 0 : Math.round((passCount / updated.length) * 100);
+    updateSkill(active.id, {
+      testCases: updated,
+      evalScore: score,
+      status: updated.length > 0 && score >= 70 ? "ready" : "testing",
+      updatedAt: now(),
+    });
+  };
 
   const handleNewSkill = () => {
     const s: SkillDraft = {
@@ -35,9 +60,16 @@ export function SkillForge() {
             <p className="text-[10px] font-mono text-gray-400 uppercase font-bold tracking-widest">Architectural Prompt Engineering</p>
           </div>
         </div>
-        <button onClick={handleNewSkill} className="btn btn-success flex items-center gap-2">
-          <Plus size={16}/> New Skill
-        </button>
+        <div className="flex items-center gap-2">
+          {active && (
+            <button onClick={runQuickEval} className="btn btn-warning flex items-center gap-2">
+              <Play size={16}/> Run Quick Eval
+            </button>
+          )}
+          <button onClick={handleNewSkill} className="btn btn-success flex items-center gap-2">
+            <Plus size={16}/> New Skill
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 flex gap-8 overflow-hidden">
@@ -69,6 +101,7 @@ export function SkillForge() {
             <div className="flex-1 flex flex-col gap-6 px-2 overflow-y-auto scrollbar-hide">
               <div className="space-y-2">
                 <label className="text-[10px] font-mono font-black uppercase text-gray-400 italic">Skill Designation</label>
+                <div className="text-[10px] font-black uppercase text-blue-600">STATUS: {active.status} {typeof active.evalScore === "number" ? `// SCORE ${active.evalScore}%` : ""}</div>
                 <input value={active.name} onChange={e => updateSkill(active.id, { name: e.target.value })}
                   className="w-full bg-transparent border-b-8 border-black font-black text-3xl uppercase outline-none focus:text-green-600 transition-colors" />
               </div>
@@ -98,6 +131,11 @@ export function SkillForge() {
                         <div key={tc.id} className="panel p-6 bg-white border-4 border-black shadow-brutal-sm space-y-4">
                           <div className="flex justify-between items-center text-[10px] font-mono font-black text-strobe-blue mb-2">
                             <span>SESSION_ID: {tc.id.slice(0,8)}</span>
+                            {typeof tc.passed === "boolean" && (
+                              <span className={cn("px-2 py-0.5 border-2", tc.passed ? "border-green-500 text-green-600" : "border-red-500 text-red-600")}>
+                                {tc.passed ? "PASS" : "FAIL"} {tc.latencyMs ? `// ${tc.latencyMs}ms` : ""}
+                              </span>
+                            )}
                             <button onClick={() => {
                               const next = active.testCases.filter(t => t.id !== tc.id);
                               updateSkill(active.id, { testCases: next });

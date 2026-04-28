@@ -3,7 +3,7 @@ import { Settings as SettingsIcon, Shield, Zap, Key, Sparkles } from "lucide-rea
 import { useAppStore } from "../store";
 
 export function Settings() {
-  const { geminiModel, setGeminiModel, geminiThinkingEnabled, setGeminiThinkingEnabled } = useAppStore();
+  const { geminiModel, setGeminiModel, geminiThinkingEnabled, setGeminiThinkingEnabled, geminiThinkingBudget, setGeminiThinkingBudget } = useAppStore();
 
   return (
     <div className="h-full flex flex-col p-8 bg-white grid-bg overflow-hidden italic">
@@ -45,6 +45,21 @@ export function Settings() {
                   <span className="text-[9px] font-bold text-gray-400 italic">Increases synthesis quality but adds processing overhead.</span>
                </div>
             </label>
+
+            {geminiThinkingEnabled && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-mono font-black uppercase text-gray-400">Thinking Budget: {geminiThinkingBudget}</label>
+                <input
+                  type="range"
+                  min={256}
+                  max={8192}
+                  step={256}
+                  value={geminiThinkingBudget}
+                  onChange={(e) => setGeminiThinkingBudget(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
         </section>
 

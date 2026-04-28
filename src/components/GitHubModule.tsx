@@ -42,7 +42,7 @@ export function GitHubModule() {
         setGitHub({ isConnected: true, user });
         // We'll store the token in session or local storage for now
         // In a real app, it would be in a secure cookie or DB
-        localStorage.setItem("gh_token", token);
+        sessionStorage.setItem("gh_token", token);
         fetchRepos(token);
       }
     };
@@ -51,7 +51,7 @@ export function GitHubModule() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("gh_token");
+    const token = sessionStorage.getItem("gh_token");
     if (token && github.isConnected && github.repos.length === 0) {
       fetchRepos(token);
     }
@@ -77,7 +77,7 @@ export function GitHubModule() {
         ) : (
           <div className="flex items-center gap-4">
             <button onClick={() => {
-              const token = localStorage.getItem("gh_token");
+              const token = sessionStorage.getItem("gh_token");
               if (token) fetchRepos(token);
             }} disabled={loading} className="btn bg-white">
               <RefreshCw className={loading ? "animate-spin" : ""} size={14}/>
@@ -88,7 +88,7 @@ export function GitHubModule() {
             </div>
             <button onClick={() => {
               setGitHub({ isConnected: false, user: null, repos: [] });
-              localStorage.removeItem("gh_token");
+              sessionStorage.removeItem("gh_token");
             }} className="btn btn-danger py-1 px-3 text-[10px]">Disconnect</button>
           </div>
         )}
@@ -112,7 +112,7 @@ export function GitHubModule() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {github.repos.map(repo => (
+             {(Array.isArray(github.repos) ? github.repos : []).map(repo => (
                <div key={repo.id} className="panel p-6 flex flex-col h-full group bg-white border-4 border-black shadow-[4px_4px_0_black] hover:shadow-[10px_10px_0_#2563eb] hover:-translate-y-1 transition-all">
                   <div className="flex justify-between items-start mb-4">
                      <h3 className="font-black text-lg uppercase truncate flex-1 pr-4">{repo.name}</h3>

@@ -41,7 +41,10 @@ export function BuilderStudio() {
     setWizardStep(2);
   };
 
+  const canFinalize = wizardConfig.name.trim().length > 1 && wizardConfig.description.trim().length > 5 && wizardConfig.modules.length > 0;
+
   const finalizeWizard = () => {
+    if (!canFinalize) return;
     const l: LockspecDoc = {
       id: uid(),
       name: wizardConfig.name,
@@ -60,7 +63,7 @@ export function BuilderStudio() {
   };
 
   const generate = async () => {
-    if (!active || isGenerating) return;
+    if (!active || isGenerating || !active.objective?.trim()) return;
     setIsGenerating(true);
     setOutput("");
     
@@ -203,7 +206,7 @@ Format as a ready-to-run shell script or deployment guide.`, {
                    </div>
                    <div className="flex justify-between pt-12">
                       <button onClick={() => setWizardStep(3)} className="btn">Back</button>
-                      <button onClick={finalizeWizard} className="btn btn-success px-12 py-4 text-lg">Initialize Project</button>
+                      <button onClick={finalizeWizard} disabled={!canFinalize} className="btn btn-success px-12 py-4 text-lg disabled:opacity-50">Initialize Project</button>
                    </div>
                 </div>
               )}

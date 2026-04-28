@@ -12,6 +12,12 @@ const STAGE_DEFS: { id: VisionStageId; label: string; prompt: (ctx: string) => s
   { id:"codegen", label:"Code Generation", prompt:(ctx) => `Generate React/Tailwind TSX: ${ctx}` },
 ];
 
+
+const extractCodeBlock = (raw: string) => {
+  const match = raw.match(/```(?:tsx|ts|jsx|js)?\n([\s\S]*?)```/i);
+  return match?.[1]?.trim() || raw;
+};
+
 export function VisionPipeline() {
   const { visionSessions, activeVisionId, addVisionSession, updateVisionSession, setActiveVisionId } = useAppStore();
   const [isRunning, setIsRunning] = useState(false);
@@ -61,7 +67,7 @@ export function VisionPipeline() {
           onDone: (fullText) => {
             setIsRunning(false);
             updateVisionSession(active.id, { 
-              generatedCode: fullText,
+              generatedCode: extractCodeBlock(fullText),
               stages: active.stages.map(s => ({ ...s, status: 'done' }))
             });
           },
@@ -160,7 +166,7 @@ export function VisionPipeline() {
                </div>
                {active.generatedCode && (
                   <div className="p-6 bg-black border-t-4 border-black flex justify-end">
-                     <button onClick={() => downloadText("vision-output.tsx", active.generatedCode!)} 
+                     <button onClick={() => downloadText("vision-output.tsx", extractCodeBlock(active.generatedCode!))} 
                         className="px-6 py-3 bg-white text-black font-black text-xs uppercase hover:bg-yellow-400 border-4 border-black shadow-[4px_4px_0_gray] flex items-center gap-3">
                         <Download size={14}/> Discharge Module
                      </button>
