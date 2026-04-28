@@ -85,9 +85,13 @@ interface AppStore {
   activeModule: ModuleId;
   sidebarOpen: boolean;
   theme: ThemeId;
+  safeMode: boolean;
   geminiModel: GeminiModelId;
   geminiThinkingEnabled: boolean;
   geminiThinkingBudget: number;
+  geminiApiKey: string;
+  githubClientId: string;
+  githubClientSecret: string;
   showApiKeyModal: boolean;
   showCommandPalette: boolean;
 
@@ -118,9 +122,13 @@ interface AppStore {
   setActiveModule: (m: ModuleId) => void;
   setSidebarOpen: (v: boolean) => void;
   setTheme: (t: ThemeId) => void;
+  setSafeMode: (v: boolean) => void;
   setGeminiModel: (m: GeminiModelId) => void;
   setGeminiThinkingEnabled: (v: boolean) => void;
   setGeminiThinkingBudget: (n: number) => void;
+  setGeminiApiKey: (v: string) => void;
+  setGitHubClientId: (v: string) => void;
+  setGitHubClientSecret: (v: string) => void;
   setShowApiKeyModal: (v: boolean) => void;
   setShowCommandPalette: (v: boolean) => void;
 
@@ -165,9 +173,13 @@ export const useAppStore = create<AppStore>()(
       activeModule: "ghost-team",
       sidebarOpen: true,
       theme: "midnight-galaxy",
+      safeMode: false,
       geminiModel: "gemini-3-flash-preview",
       geminiThinkingEnabled: false,
       geminiThinkingBudget: 1024,
+      geminiApiKey: "",
+      githubClientId: "",
+      githubClientSecret: "",
       showApiKeyModal: false,
       showCommandPalette: false,
       messages: [],
@@ -196,9 +208,13 @@ export const useAppStore = create<AppStore>()(
       setActiveModule: (m) => set((s) => { s.activeModule = m; }),
       setSidebarOpen:  (v) => set((s) => { s.sidebarOpen = v; }),
       setTheme:        (t) => set((s) => { s.theme = t; }),
+      setSafeMode:     (v) => set((s) => { s.safeMode = v; }),
       setGeminiModel:  (m) => set((s) => { s.geminiModel = m; }),
       setGeminiThinkingEnabled: (v) => set((s) => { s.geminiThinkingEnabled = v; }),
       setGeminiThinkingBudget:  (n) => set((s) => { s.geminiThinkingBudget = n; }),
+      setGeminiApiKey:       (v) => set((s) => { s.geminiApiKey = v; }),
+      setGitHubClientId:     (v) => set((s) => { s.githubClientId = v; }),
+      setGitHubClientSecret: (v) => set((s) => { s.githubClientSecret = v; }),
       setShowApiKeyModal:    (v) => set((s) => { s.showApiKeyModal = v; }),
       setShowCommandPalette: (v) => set((s) => { s.showCommandPalette = v; }),
 
@@ -259,8 +275,11 @@ export const useAppStore = create<AppStore>()(
       storage: createJSONStorage(() => customStorage as any),
       partialize: (s) => ({
         theme: s.theme, sidebarOpen: s.sidebarOpen,
+        safeMode: s.safeMode,
         geminiModel: s.geminiModel, geminiThinkingEnabled: s.geminiThinkingEnabled,
         geminiThinkingBudget: s.geminiThinkingBudget,
+        geminiApiKey: s.geminiApiKey,
+        githubClientId: s.githubClientId, githubClientSecret: s.githubClientSecret,
         gallery: s.gallery, tasks: s.tasks, skills: s.skills,
         lockspecs: s.lockspecs, docs: s.docs, visionSessions: s.visionSessions,
         github: { isConnected: s.github.isConnected, user: s.github.user },

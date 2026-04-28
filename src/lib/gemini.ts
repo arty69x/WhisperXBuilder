@@ -32,7 +32,7 @@ export interface TextOpts {
 }
 
 export async function geminiText(prompt: string, opts: TextOpts = {}): Promise<string> {
-  const { model = DEFAULT_MODEL, systemInstruction, temperature = 0.7, imagePart } = opts;
+  const { model = DEFAULT_MODEL, systemInstruction, temperature = 0.7, imagePart, thinkingBudget } = opts;
   
   const contents: any[] = [];
   if (imagePart) {
@@ -40,13 +40,19 @@ export async function geminiText(prompt: string, opts: TextOpts = {}): Promise<s
   }
   contents.push({ text: prompt });
 
+  const config: any = {
+    systemInstruction,
+    temperature,
+  };
+
+  if (thinkingBudget) {
+    config.thinkingConfig = { includeThoughts: true, includeThoughtsInResponse: true, maxOutputTokens: thinkingBudget };
+  }
+
   const response = await ai.models.generateContent({
     model,
     contents: [{ role: 'user', parts: contents }],
-    config: {
-      systemInstruction,
-      temperature,
-    }
+    config
   });
 
   return response.text || "";
@@ -62,7 +68,7 @@ export async function geminiStream(prompt: string, opts: {
   onDone: (fullText: string) => void;
   onError: (err: Error) => void;
 }) {
-  const { model = DEFAULT_MODEL, systemInstruction, temperature = 0.7, onChunk, onDone, onError, imagePart } = opts;
+  const { model = DEFAULT_MODEL, systemInstruction, temperature = 0.7, onChunk, onDone, onError, imagePart, thinkingBudget } = opts;
   
   try {
     const contents: any[] = [];
@@ -71,20 +77,28 @@ export async function geminiStream(prompt: string, opts: {
     }
     contents.push({ text: prompt });
 
+    const config: any = {
+      systemInstruction,
+      temperature,
+    };
+
+    if (thinkingBudget) {
+      config.thinkingConfig = { includeThoughts: true, includeThoughtsInStream: true, maxOutputTokens: thinkingBudget };
+    }
+
     const result = await ai.models.generateContentStream({
       model,
       contents: [{ role: 'user', parts: contents }],
-      config: {
-        systemInstruction,
-        temperature,
-      }
+      config
     });
 
     let fullText = "";
     for await (const chunk of result) {
       const text = chunk.text || "";
+      // Handle thinking if present in chunk
+      const isThinking = !!(chunk as any).thought;
       fullText += text;
-      onChunk(text, false); 
+      onChunk(text, isThinking); 
     }
     onDone(fullText);
   } catch (e) {

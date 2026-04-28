@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Hammer, Plus, Download, Sparkles, Loader, Layout, Target, ChevronRight, CheckCircle2, Package, Monitor } from "lucide-react";
+import { Hammer, Plus, Download, Sparkles, Loader, Layout, Target, ChevronRight, CheckCircle2, Package, Monitor, FileArchive } from "lucide-react";
+import JSZip from "jszip";
 import { cn, uid, now, downloadText } from "../lib/utils";
 import { geminiStream, writeToSystem } from "../lib/gemini";
 import { useAppStore, TEMPLATES } from "../store";
@@ -9,6 +10,7 @@ export function BuilderStudio() {
   const { lockspecs, activeLockspecId, addLockspec, updateLockspec, setActiveLockspecId } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [output, setOutput] = useState("");
+  const [previewTab, setPreviewTab] = useState<"preview" | "output">("preview");
   
   // Wizard State
   const [wizardStep, setWizardStep] = useState(1);
@@ -82,8 +84,31 @@ Format as a ready-to-run shell script or deployment guide.`, {
     });
   };
 
+  const exportLockspec = () => {
+    if (!active) return;
+    downloadText(`${active.name.toLowerCase().replace(/ /g, "_")}_lockspec.json`, JSON.stringify(active, null, 2));
+  };
+
+  const exportProject = async () => {
+    if (!active) return;
+    const zip = new JSZip();
+    
+    // Construct dummy project structure based on lockspec
+    zip.file("lockspec.json", JSON.stringify(active, null, 2));
+    active.modules.forEach(m => {
+       zip.folder(m.replace("-", "/")).file("index.tsx", `// ${m} module\nexport const ${m.replace(/-/g, "")} = () => <div />;`);
+    });
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${active.name.toLowerCase().replace(/ /g, "_")}_export.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const deployToSystem = async () => {
-    if (!output) return;
     const pathInput = window.prompt("SYNC_POINT (e.g., scripts/setup.sh):", "blueprint_output.sh");
     if (!pathInput) return;
 
@@ -109,6 +134,8 @@ Format as a ready-to-run shell script or deployment guide.`, {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button onClick={handleStartWizard} className="btn bg-[#ffab00] hover:bg-[#ffc107] flex-1 md:flex-none py-2 text-xs md:text-sm"><Layout size={14}/> Wizard</button>
+          <button onClick={exportProject} className="btn flex-1 md:flex-none py-2 text-xs md:text-sm"><FileArchive size={14}/> Export Project</button>
+          <button onClick={exportLockspec} className="btn flex-1 md:flex-none py-2 text-xs md:text-sm"><FileArchive size={14}/> Export Lockspec</button>
           <button onClick={() => {
              const l = { id:uid(), name:"New Blank", version:"1.0.0", stack:"React", objective:"", modules:[], constraints:[], geminiModel:"gemini-3-flash-preview" as any, thinkingEnabled:true, createdAt:now() };
              addLockspec(l);
@@ -234,6 +261,47 @@ Format as a ready-to-run shell script or deployment guide.`, {
                    <input value={active.name} onChange={e => updateLockspec(active.id, { name: e.target.value })} 
                       className="w-full bg-transparent border-b-4 md:border-b-8 border-black font-black text-xl md:text-3xl uppercase outline-none focus:text-blue-600 transition-colors" />
                 </div>
+                <div className="flex gap-4">
+                  <div className="space-y-2 flex-1">
+                     <label className="text-[9px] md:text-[10px] font-mono font-black uppercase text-gray-400 italic">Version</label>
+                     <div className="flex gap-2">
+                       <input value={active.version} onChange={e => updateLockspec(active.id, { version: e.target.value })} 
+                          className="flex-1 bg-transparent border-b-4 border-black font-black text-lg uppercase outline-none focus:text-blue-600" />
+                       <button onClick={() => updateLockspec(active.id, { version: (parseFloat(active.version)+0.1).toFixed(1) })} className="btn px-2 text-[10px]">AUTO_UP</button>
+                     </div>
+                  </div>
+                  <div className="space-y-2 flex-1">
+                     <label className="text-[9px] md:text-[10px] font-mono font-black uppercase text-gray-400 italic">Model</label>
+                     <select value={active.geminiModel} onChange={e => updateLockspec(active.id, { geminiModel: e.target.value as any })}
+                        className="w-full bg-transparent border-b-4 border-black font-black text-sm uppercase outline-none">
+                        {["gemini-3-flash-preview", "gemini-3.1-pro-preview", "gemini-1.5-flash", "gemini-1.5-pro"].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                     </select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[9px] md:text-[10px] font-mono font-black uppercase text-gray-400 italic">Constraints</label>
+                   <div className="flex flex-wrap gap-2">
+                     {["Performance", "Security", "Scalability", "SEO", "Accessibility"].map(c => (
+                        <button key={c} onClick={() => {
+                          const next = active.constraints.includes(c) ? active.constraints.filter(x => x !== c) : [...active.constraints, c];
+                          updateLockspec(active.id, { constraints: next });
+                        }} className={cn("px-3 py-1 font-black text-[10px] border-2", active.constraints.includes(c) ? "bg-black text-white" : "bg-white")}>{c}</button>
+                     ))}
+                   </div>
+                </div>                
+                <div className="space-y-2">
+                   <label className="text-[9px] md:text-[10px] font-mono font-black uppercase text-gray-400 italic">Modules</label>
+                   <div className="flex flex-wrap gap-2">
+                     {["ghost-team", "vision-pipeline", "builder", "doc-atelier", "theme-lab", "github"].map(m => (
+                        <button key={m} onClick={() => {
+                          const next = active.modules.includes(m) ? active.modules.filter(x => x !== m) : [...active.modules, m];
+                          updateLockspec(active.id, { modules: next });
+                        }} className={cn("px-3 py-1 font-black text-[10px] border-2", active.modules.includes(m) ? "bg-black text-white" : "bg-white")}>{m}</button>
+                     ))}
+                   </div>
+                </div>
                 <div className="space-y-2">
                    <label className="text-[9px] md:text-[10px] font-mono font-black uppercase text-gray-400 italic">Operational Objectives</label>
                    <textarea value={active.objective} onChange={e => updateLockspec(active.id, { objective: e.target.value })} 
@@ -258,16 +326,23 @@ Format as a ready-to-run shell script or deployment guide.`, {
           <div className="flex-1 flex flex-col bg-[#070c12] text-[#00e676] min-h-[400px] lg:min-h-0 relative border-4 md:border-8 border-black overflow-hidden shadow-[10px_10px_0_gray] md:shadow-[15px_15px_0_gray]">
              <div className="bg-black border-b-4 border-black p-3 md:p-4 flex items-center justify-between">
                 <div className="flex gap-2">
-                   <div className="w-2 md:w-3 h-2 md:h-3 bg-red-600 border md:border-2 border-black" />
-                   <div className="w-2 md:w-3 h-2 md:h-3 bg-yellow-400 border md:border-2 border-black" />
-                   <div className="w-2 md:w-3 h-2 md:h-3 bg-green-500 border md:border-2 border-black" />
+                   <button onClick={() => setPreviewTab("preview")} className={cn("px-3 py-1 font-black text-[9px] uppercase", previewTab === "preview" ? "bg-white text-black" : "bg-black text-gray-500")}>LIVE_PREVIEW</button>
+                   <button onClick={() => setPreviewTab("output")} className={cn("px-3 py-1 font-black text-[9px] uppercase", previewTab === "output" ? "bg-white text-black" : "bg-black text-gray-500")}>GEN_OUTPUT</button>
                 </div>
                 <span className="text-[8px] md:text-[10px] font-mono font-black tracking-[0.2em] md:tracking-[0.3em] uppercase text-gray-500 truncate ml-4">Kernel.log // {active.name.toLowerCase().replace(/ /g,"-")}</span>
              </div>
-             <pre className="flex-1 p-4 md:p-8 font-mono text-[10px] md:text-sm overflow-auto leading-loose scrollbar-hide selection:bg-green-500 selection:text-black">
-                {output || (isGenerating ? "// Parsing architectural directives..." : "// Awaiting input stream...")}
-             </pre>
-             {output && (
+             
+             {previewTab === "preview" ? (
+                 <pre className="flex-1 p-4 md:p-8 font-mono text-[10px] md:text-sm overflow-auto leading-loose scrollbar-hide selection:bg-green-500 selection:text-black">
+                     {JSON.stringify(active, null, 2)}
+                 </pre>
+             ) : (
+                 <pre className="flex-1 p-4 md:p-8 font-mono text-[10px] md:text-sm overflow-auto leading-loose scrollbar-hide selection:bg-green-500 selection:text-black">
+                    {output || (isGenerating ? "// Parsing architectural directives..." : "// Awaiting input stream...")}
+                 </pre>
+             )}
+             
+             {previewTab === "output" && output && (
                <div className="p-4 md:p-6 bg-black border-t-4 border-black flex flex-wrap justify-end gap-3 md:gap-4">
                  <button onClick={() => downloadText(`${active.name}.sh`, output)} className="px-4 md:px-6 py-2 md:py-3 bg-white text-black font-black text-[10px] md:text-xs uppercase hover:bg-yellow-400 flex items-center justify-center gap-2 border-4 border-black shadow-[4px_4px_0_gray]">
                    <Download size={14}/> Discharge

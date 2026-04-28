@@ -18,7 +18,8 @@ import { useAppStore } from './store';
 import { LogOut, User as UserIcon } from 'lucide-react';
 
 export default function App() {
-  const { activeModule, auth, logout } = useAppStore();
+  const { activeModule, auth, logout, setSidebarOpen } = useAppStore();
+  const user = auth.user;
 
   // Auto-save logic
   useEffect(() => {

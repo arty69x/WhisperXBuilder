@@ -88,7 +88,8 @@ export interface ChatMessage {
 // ─── Vision Pipeline ─────────────────────────────────────
 export type VisionStageId =
   | "upload"|"blueprint"|"tokens"|"patterns"
-  | "codegen"|"rules"|"refine"|"export";
+  | "codegen"|"rules"|"refine"|"export"
+  | "identification"|"layout"|"colors";
 
 export interface VisionStage {
   id: VisionStageId;
@@ -97,6 +98,7 @@ export interface VisionStage {
   output?: string;
   tokensUsed?: number;
   durationMs?: number;
+  error?: string;
 }
 
 export interface VisionSession {
@@ -106,6 +108,7 @@ export interface VisionSession {
   imageMimeType?: string;
   stages: VisionStage[];
   lockspec?: string;
+  blueprint?: string;
   generatedCode?: string;
   createdAt: number;
   updatedAt: number;

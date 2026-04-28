@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Trash2, Download, Ghost, Copy, Sparkles, Check } from "lucide-react";
+import { Send, Trash2, Download, Ghost, Copy, Sparkles, Check, Monitor, RefreshCw } from "lucide-react";
 import { cn, uid, now, formatDate, downloadJson } from "../lib/utils";
-import { geminiStream } from "../lib/gemini";
+import { geminiStream, writeToSystem } from "../lib/gemini";
 import { useAppStore, AGENTS } from "../store";
 import type { ChatMessage, AgentId } from "../types";
 
@@ -17,22 +17,82 @@ ${thinkingEnabled ? "You have extended thinking enabled." : ""}
 Respond in the same language as the user.`;
 };
 
-import { Send, Trash2, Download, Ghost, Copy, Sparkles, Check, Monitor } from "lucide-react";
-import { cn, uid, now, formatDate, downloadJson } from "../lib/utils";
-import { geminiStream, writeToSystem } from "../lib/gemini";
-import { useAppStore, AGENTS } from "../store";
-
-// ... (SYSTEM function stays same)
-
 export function GhostTeam() {
-  const { messages, activeAgent, chatTyping, geminiThinkingEnabled,
+  const { messages, activeAgent, chatTyping, geminiThinkingEnabled, geminiThinkingBudget,
           addMessage, updateLastMessage, clearMessages, setActiveAgent, setChatTyping } = useAppStore();
   const [input, setInput] = useState("");
   const [thinkingBuffer, setThinkingBuffer] = useState("");
   const [applyingFile, setApplyingFile] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ... (useEffect and send stay same/similar)
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  const send = async () => {
+    if (!input.trim() || chatTyping) return;
+    
+    const userMsg: ChatMessage = { id: uid(), role: "user", content: input, timestamp: now() };
+    addMessage(userMsg);
+    setInput("");
+    setChatTyping(true);
+    setThinkingBuffer("");
+
+    const assistantMsg: ChatMessage = { 
+      id: uid(), 
+      role: "assistant", 
+      content: "", 
+      timestamp: now(), 
+      agentId: activeAgent 
+    };
+    addMessage(assistantMsg);
+
+    try {
+      await geminiStream(input, {
+        systemInstruction: SYSTEM(activeAgent, geminiThinkingEnabled),
+        thinkingBudget: geminiThinkingEnabled ? geminiThinkingBudget : undefined,
+        onChunk: (chunk, isThinking) => {
+          if (isThinking) {
+            setThinkingBuffer(prev => prev + chunk);
+          } else {
+            updateLastMessage(chunk);
+          }
+        },
+        onDone: () => {
+          setChatTyping(false);
+          setThinkingBuffer("");
+        },
+        onError: (err) => {
+          let suggestion = "Please check your network connection or try a different model.";
+          if (err.message.includes("401")) suggestion = "Authentication failed. Please verify your API Key in Settings.";
+          if (err.message.includes("429")) suggestion = "Quota exceeded. Please wait a moment or check your billing status.";
+          if (err.message.includes("500") || err.message.includes("503")) suggestion = "Gemini API is currently overloaded. Please try again later.";
+          
+          updateLastMessage(`\n\n[KERNEL.ERR]: ${err.message}\n> SUGGESTION: ${suggestion}`);
+          setChatTyping(false);
+          setThinkingBuffer("");
+        }
+      });
+    } catch (err: any) {
+      let suggestion = "An unexpected error occurred.";
+      if (err.message.includes("401")) suggestion = "Authentication failed. Please verify your API Key in Settings.";
+      updateLastMessage(`\n\n[KERNEL.ERR]: ${err.message}\n> SUGGESTION: ${suggestion}`);
+      setChatTyping(false);
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  };
 
   const applyToSystem = async (content: string) => {
     const match = content.match(/```(?:tsx|typescript|ts|js|jsx)?\n([\s\S]*?)```/);
