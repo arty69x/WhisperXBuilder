@@ -1,0 +1,1 @@
+export const assets = Array.from({length:20},(_,i)=>({id:`asset-${i+1}`,title:`Asset ${i+1}`,type:["image","video","icon","font"][i%4],url:`/assets/${i+1}`,thumbnail:`asset-${i+1}`,size:`${(i+1)*128}KB`}));
