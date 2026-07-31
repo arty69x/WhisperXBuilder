@@ -1,1 +1,0 @@
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) { return <input {...props} style={{minHeight:44,border:"1px solid var(--border2)",borderRadius:999,padding:"0 16px",background:"var(--surface)",color:"var(--fg)",width:"100%"}} />; }

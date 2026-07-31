@@ -1,3 +1,0 @@
-"use client";
-import Link from "next/link";import { Button } from "@/components/ui/button";
-export function Navbar(){function toggle(){document.documentElement.classList.toggle("light")}return <header className="nav"><div className="container navin"><Link className="brand" href="/">WHISPERX</Link><nav className="links" aria-label="Primary"><Link href="/builder">Builder</Link><Link href="/marketplace">Marketplace</Link><Link href="/studio">AI Studio</Link><Link href="/dashboard">Dashboard</Link><Link href="/docs">Docs</Link></nav><Button aria-label="Toggle dark and light theme" onClick={toggle}>Theme</Button></div></header>}

@@ -1,9 +1,15 @@
 {
+  "name": "wpx-studio-os",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WPX Studio OS production web platform built with Next.js 16, React 19, TypeScript, and Tailwind CSS v4.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@types/node": "latest",
@@ -14,8 +20,8 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "typescript": "latest",
-    "lucide-react": "latest"
+    "typescript": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "engines": { "node": ">=20.9.0" }
 }
