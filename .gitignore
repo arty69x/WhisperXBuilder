@@ -1,6 +1,13 @@
 node_modules
 .next
 out
+build
 dist
+coverage
 .env*.local
+.env
+.DS_Store
+*.log
+.vercel
+
 tsconfig.tsbuildinfo

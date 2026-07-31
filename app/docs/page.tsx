@@ -1,2 +1,11 @@
-import { Navbar } from "@/components/navigation/navbar";import { motionPresets } from "@/data/motion-presets";
-export default function Docs(){return <><Navbar/><main className="container section"><p className="meta">Documentation</p><h1 className="h2">Build with tokens, motion, and intent.</h1><div className="workspace" style={{padding:0}}><aside className="panel hide-mobile"><nav aria-label="Docs"><p>Tokens</p><p>Components</p><p>Motion</p><p>Accessibility</p></nav></aside><article className="panel"><h2>Component contract</h2><p className="muted">Every component supports idle, hover, focus-visible, pressed, selected, disabled, loading, skeleton, empty, error, success, and reduced-motion states.</p><pre style={{fontFamily:"JetBrains Mono",background:"var(--soft)",padding:16,borderRadius:16,overflow:"auto"}}>{`<Button variant="primary" aria-label="Publish project">Publish</Button>`}</pre><h2>Motion presets</h2>{motionPresets.slice(0,8).map(m=><p className="pill" key={m.id}>{m.icon} {m.title} · {m.duration}ms · {m.easing}</p>)}</article></div></main></>}
+export default function DocsPage() {
+  return (
+    <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <h1 className="text-3xl font-black text-white sm:text-5xl">WPX Studio OS Docs</h1>
+      <p className="mt-6 text-lg leading-8 text-slate-300">
+        Use this production skeleton to add domain features under features/, shared primitives under
+        components/, and platform services under lib/.
+      </p>
+    </main>
+  );
+}
